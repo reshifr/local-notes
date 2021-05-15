@@ -109,7 +109,7 @@ struct notes {
     }
 };
 
-#define NOTES_PATH "/mnt/Assign/XLib/notes"
+#define NOTES_PATH "/mnt/Assign/Lib/notes"
 #define MESSAGE "notes KEYWORD"
 
 int main(int argc, char** argv) {
