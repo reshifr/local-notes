@@ -35,7 +35,6 @@ struct notes {
 
     void index(void) {
       for(const auto& node: std::filesystem::directory_iterator(dir_path)) {
-        std::cout<<node.path()<<"\n";
         if( !node.is_regular_file() )
           continue;
         char buf[BUF_LEN];
