@@ -34,15 +34,18 @@ struct notes {
     }
 
     void index(void) {
-      for(const auto& file: std::filesystem::directory_iterator(dir_path)) {
+      for(const auto& node: std::filesystem::directory_iterator(dir_path)) {
+        std::cout<<node.path()<<"\n";
+        if( !node.is_regular_file() )
+          continue;
         char buf[BUF_LEN];
-        std::ifstream stream(file.path(), std::ios::in);
+        std::ifstream stream(node.path(), std::ios::in);
         while( !stream.eof() ) {
           std::string line = getline(buf, stream);
           if( !is_key(line) )
             continue;
           body cur_body;
-          cur_body.filename = file.path().filename();
+          cur_body.filename = node.path().filename();
           cur_body.key = std::string(line);
           for(;;) {
             line = getline(buf, stream);
@@ -107,7 +110,7 @@ struct notes {
     }
 };
 
-#define NOTES_PATH "/mnt/Assign/Lib/notes"
+#define NOTES_PATH "/mnt/Assign/XLib/notes"
 #define MESSAGE "notes KEYWORD"
 
 int main(int argc, char** argv) {
