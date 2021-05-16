@@ -3,13 +3,14 @@
 MIDO_ADB_PORT=5555
 MIDO_FTP_PORT=2221
 MIDO_SESSION=~/Utils/rdb/mido.session
-MIDO_MESSAGE='open --cast|--ftp'
+MIDO_MESSAGE="open --cast|--ftp"
 
 function scan_open_ip {
   routed_ip=`ip route | awk '/default via/{ printf "%s/24", $3 }'`
-  for i in {0..100} ; do
-    open_ip=`nmap -p $1 $routed_ip --open --min-parallelism 100 | awk '/scan report/{ print $5 }'`
-    if [ $open_ip ] ; then
+  for i in {0..99}; do
+    open_ip=`nmap -p $1 $routed_ip --open \
+      --min-parallelism 100 | awk '/scan report/{ print $5 }'`
+    if [ $open_ip ]; then
       echo $open_ip
       break
     fi
@@ -17,11 +18,12 @@ function scan_open_ip {
 }
 
 function get_open_ip {
-  if [ -f $MIDO_SESSION ] ; then
+  if [ -f $MIDO_SESSION ]; then
     notify-send "Get Session..."
     open_ip=`cat $MIDO_SESSION`
-    ip_stat=`true &>/dev/null </dev/tcp/$open_ip/$1 && echo open || echo close`
-    if [ $ip_stat == open ] ; then
+    ip_stat=`true &>/dev/null \
+      </dev/tcp/$open_ip/$1 && echo open || echo close`
+    if [ $ip_stat == open ]; then
       echo $open_ip
       return
     fi
@@ -38,7 +40,7 @@ function ip_with_port {
   echo $open_ip:$1
 }
 
-if [ $# -eq 0 ] ; then
+if [ $# -eq 0 ]; then
   echo $MIDO_MESSAGE
 else
   case $1 in
@@ -46,7 +48,8 @@ else
       open_ip=`ip_with_port $MIDO_ADB_PORT`
       adb connect $open_ip
       notify-send "Displaying..."
-      scrcpy --max-size 1280 --max-fps 60 --serial $open_ip --window-height 720 --window-width 405
+      scrcpy --max-size 1280 --max-fps 60 \
+        --serial $open_ip --window-height 720 --window-width 405
       ;;
     --ftp)
       open_ip=`ip_with_port $MIDO_FTP_PORT`

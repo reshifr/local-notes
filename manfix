@@ -3,9 +3,9 @@
 rmmod i2c_hid
 modprobe i2c_hid
 yes | pacman -Scc
-yes | pacman -R $(pacman -Qtdq)
+yes | pacman -R `pacman -Qtdq`
 yes | pamac remove -o
-if [[ $1 == --webcam ]] ; then
+if [[ $1 == --webcam ]]; then
   chmod 0666 /dev/bus/usb/003/002
 else
   udevadm control --reload-rules

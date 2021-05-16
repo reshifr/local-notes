@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MESSAGE='manjaro RAM_IN_MB'
+MESSAGE="manjaro RAM_IN_MB"
 IMAGE=~/Utils/rimg/manjaro.img
 HOSTFWD=\
 hostfwd=::50021-:21,`# FTP`\
@@ -10,12 +10,9 @@ hostfwd=::50080-:80,`# Apache`\
 hostfwd=::50122-:50122,`# Docker SSH`\
 hostfwd=::50136-:50136,`# Docker MariaDB`\
 hostfwd=::50180-:50180,`# Docker Apache`\
-hostfwd=::50188-:50188,`# Docker MyAdmin`\
-\
-hostfwd=::50222-:50222,`# Docker SSH`\
-hostfwd=::50280-:50280`# Docker Apache`
+hostfwd=::50188-:50188`# Docker MyAdmin`
 
-if [ $# -eq 0 ] ; then
+if [ $# -eq 0 ]; then
   echo $MESSAGE
 else
   prime-run qemu-system-x86_64 \
