@@ -1,7 +1,7 @@
 #!/bin/bash
 
-MESSAGE="manjaro RAM_IN_MB"
-IMAGE=~/Utils/rimg/manjaro.img
+MESSAGE="xmanjaro RAM_IN_MB"
+IMAGE=/mnt/Volatile/manjaro.img
 HOSTFWD=\
 hostfwd=::50022-:22,`# SSH`\
 hostfwd=::50122-:50122,`# Docker SSH`\
