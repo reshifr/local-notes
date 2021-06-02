@@ -1,63 +1,60 @@
 #!/bin/bash
 
-MIDO_ADB_PORT=5555
-MIDO_FTP_PORT=2221
-MIDO_SESSION=~/Utils/rdb/mido.session
-MIDO_MESSAGE="open --cast|--ftp"
+ADB_PORT=5555
+FTP_PORT=2221
+DEFAULT_PERMS=0777
+SESSION_DIR=~/Utils/rdb
+SESSION="$SESSION_DIR/mido.session"
+MAX_LOOP=99
+HELP="open --cast|--ftp"
 
-function scan_open_ip {
-  routed_ip=`ip route | awk '/default via/{ printf "%s/24", $3 }'`
-  for i in {0..99}; do
-    open_ip=`nmap -p $1 $routed_ip --open \
-      --min-parallelism 100 | awk '/scan report/{ print $5 }'`
-    if [ $open_ip ]; then
-      echo $open_ip
+[ ! -d "$RDB_DIR" ] && mkdir -m $DEFAULT_PERMS -p "$SESSION_DIR"
+
+scan_ip() { # ( ip )
+  routed=$(ip route | awk '/default via/{ printf "%s/24", $3 }')
+  for i in {0..$MAX_LOOP}; do
+    ip=$(
+      nmap -p "$1" "$routed" --open \
+        --min-parallelism "$MAX_LOOP" | awk '/scan report/{ print $5 }')
+    if [ -n "$ip" ]; then
+      echo "$ip"
       break
     fi
   done
 }
 
-function get_open_ip {
-  if [ -f $MIDO_SESSION ]; then
-    notify-send "Get Session..."
-    open_ip=`cat $MIDO_SESSION`
-    ip_stat=`true &>/dev/null \
-      </dev/tcp/$open_ip/$1 && echo open || echo close`
-    if [ $ip_stat == open ]; then
-      echo $open_ip
+get_ip() { # ( port )
+  if [ -f "$SESSION" ]; then
+    notify-send "Get session..."
+    ip=$(cat "$SESSION")
+    if [ true &> /dev/null </dev/tcp/"$ip"/"$1" ]; then
+      echo $ip
       return
     fi
-    notify-send "Session Expired"
+    notify-send "Session expired..."
   fi
   notify-send "Scanning..."
-  open_ip=`scan_open_ip $1`
-  echo $open_ip > $MIDO_SESSION
-  echo $open_ip
+  ip=$(scan_ip "$1")
+  echo $ip > "$SESSION"
+  echo $ip
 }
 
-function ip_with_port {
-  open_ip=`get_open_ip $1`
-  echo $open_ip:$1
-}
-
-if [ $# -eq 0 ]; then
-  echo $MIDO_MESSAGE
+if (( $# == 0 )); then
+  echo $HELP
 else
-  case $1 in
+  case "$1" in
     --cast)
-      open_ip=`ip_with_port $MIDO_ADB_PORT`
-      adb connect $open_ip
+      ip=$(get_ip "$ADB_PORT")
+      adb connect "$ip:$ADB_PORT"
       notify-send "Displaying..."
       scrcpy --max-size 1280 --max-fps 60 \
-        --serial $open_ip --window-height 720 --window-width 405
-      ;;
+        --serial "$ip:$ADB_PORT" --window-height 720 --window-width 405
+    ;;
     --ftp)
-      open_ip=`ip_with_port $MIDO_FTP_PORT`
+      ip=$(get_ip "$FTP_PORT")
       notify-send "Open..."
-      exo-open --launch FileManager ftp://$open_ip
-      ;;
-    *)
-      echo $MIDO_MESSAGE
-      ;;
+      exo-open --launch FileManager "ftp://$ip:$FTP_PORT"
+    ;;
+    *) echo $HELP;;
   esac
 fi
