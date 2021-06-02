@@ -1,7 +1,0 @@
-#!/bin/bash
-
-HENTRY_DB=~/Utils/rdb/hentry.db
-HENTRY_BIN=~/Utils/hentry-daemon
-
-message=`pkexec $HENTRY_BIN $HENTRY_DB`
-notify-send "$message"

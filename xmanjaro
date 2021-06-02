@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-MESSAGE="xmanjaro RAM_IN_MB"
+HELP="xmanjaro RAM_IN_MB"
 IMAGE=/mnt/Volatile/manjaro.img
 HOSTFWD=\
 hostfwd=::50022-:22,`# SSH`\
@@ -9,8 +9,8 @@ hostfwd=::50136-:50136,`# Docker MariaDB`\
 hostfwd=::50180-:50180,`# Docker Apache`\
 hostfwd=::50188-:50188`# Docker MyAdmin`
 
-if [ $# -eq 0 ]; then
-  echo $MESSAGE
+if (( $# == 0 )); then
+  echo $HELP
 else
   prime-run qemu-system-x86_64 \
     -bios /usr/share/qemu/bios.bin \
