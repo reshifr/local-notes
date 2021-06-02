@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 ADB_PORT=5555
 FTP_PORT=2221
