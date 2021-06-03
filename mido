@@ -28,19 +28,19 @@ get_ip() { # ( port )
     notify-send "Get session..."
     ip=$(cat "$SESSION")
     if [ true &> /dev/null </dev/tcp/"$ip"/"$1" ]; then
-      echo $ip
+      echo "$ip"
       return
     fi
     notify-send "Session expired..."
   fi
   notify-send "Scanning..."
   ip=$(scan_ip "$1")
-  echo $ip > "$SESSION"
-  echo $ip
+  echo "$ip" > "$SESSION"
+  echo "$ip"
 }
 
 if (( $# == 0 )); then
-  echo $HELP
+  echo "$HELP"
 else
   case "$1" in
     --cast)
@@ -55,6 +55,6 @@ else
       notify-send "Open..."
       exo-open --launch FileManager "ftp://$ip:$FTP_PORT"
     ;;
-    *) echo $HELP;;
+    *) echo "$HELP";;
   esac
 fi
