@@ -10,7 +10,7 @@ hostfwd=::50180-:50180,`# Docker Apache`\
 hostfwd=::50188-:50188`# Docker MyAdmin`
 
 if (( $# == 0 )); then
-  echo $HELP
+  echo "$HELP"
 else
   prime-run qemu-system-x86_64 \
     -bios /usr/share/qemu/bios.bin \
