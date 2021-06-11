@@ -1,25 +1,28 @@
 #!/bin/sh
 
 HELP="xmanjaro RAM_IN_MB"
-IMAGE=/mnt/Volatile/manjaro.img
+BASE=/mnt/SDXC/Log/Programs/manjaro
+VOLATILE_DIR=/mnt/Volatile
+IMAGE="$VOLATILE_DIR/manjaro.img"
 HOSTFWD=\
-hostfwd=::50022-:22,`# SSH`\
-hostfwd=::50122-:50122,`# Docker SSH`\
-hostfwd=::50136-:50136,`# Docker MariaDB`\
-hostfwd=::50180-:50180,`# Docker Apache`\
-hostfwd=::50188-:50188`# Docker MyAdmin`
+hostfwd=::22-:22,`# SSH`\
+hostfwd=::80-:80,`# HTTP`\
+hostfwd=::3306-:3306,`# MariaDB`\
+hostfwd=::8080-:8080`# PhpMyAdmin`
 
 if (( $# == 0 )); then
   echo "$HELP"
 else
+  [ ! -f "$IMAGE" ] && (cd "$VOLATILE_DIR"; zpaq x "$BASE") && \
+    qemu-img resize -f raw "$IMAGE" +4G
   prime-run qemu-system-x86_64 \
     -bios /usr/share/qemu/bios.bin \
-    -drive format=raw,file=$IMAGE \
+    -drive format=raw,file="$IMAGE" \
     -m $1 -machine type=q35,accel=kvm -cpu max \
     -smp 8,sockets=1,cores=8,threads=1 \
     -device virtio-vga,virgl=on \
     -display sdl -ctrl-grab \
-    -nic user,model=e1000,$HOSTFWD \
+    -nic user,model=e1000,"$HOSTFWD" \
     -device ich9-intel-hda -device hda-duplex \
     -usb -device usb-host,vendorid=0x30c9,productid=0x0013
 fi
