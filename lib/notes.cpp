@@ -44,7 +44,7 @@ struct notes {
           if( !is_key(line) )
             continue;
           body cur_body;
-          cur_body.filename = node.path().filename();
+          cur_body.filename = node.path().filename().generic_string();
           cur_body.key = std::string(line);
           for(;;) {
             line = getline(buf, stream);
@@ -109,7 +109,11 @@ struct notes {
     }
 };
 
-#define NOTES_PATH "/mnt/Assign/Lib/notes"
+#if defined _WIN32 || defined _WIN64
+# define NOTES_PATH "D:\\Lib\\notes"
+#else
+# define NOTES_PATH "/mnt/Assign/Lib/notes"
+#endif
 #define MESSAGE "notes KEYWORD"
 
 int main(int argc, char** argv) {
