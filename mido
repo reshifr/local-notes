@@ -33,7 +33,7 @@ scan_ip() { # ( port )
 get_ip() { # ( port )
   if [ -f "$SESSION" ]; then
     IP=$(cat "$SESSION")
-    [ ! &> /dev/null < /dev/tcp/"$IP"/$1 ] && return $EXIT_SUCCESS
+    [ true &> /dev/null < /dev/tcp/"$IP"/$1 ] && return $EXIT_SUCCESS
     notify-send "Sesi kedaluwarsa..."
   fi
   notify-send "Mendapatkan ulang..."
