@@ -1,42 +1,44 @@
 #!/bin/sh
 
+EXIT_SUCCESS=0
+EXIT_FAILURE=1
+
 ADB_PORT=5555
 FTP_PORT=2221
 DEFAULT_PERMS=0777
 SESSION_DIR=~/Utils/rdb
 SESSION="$SESSION_DIR/mido.session"
-MAX_LOOP=99
+MAX_FAIL=32
 HELP="open --cast|--ftp"
 
-[ ! -d "$RDB_DIR" ] && mkdir -m $DEFAULT_PERMS -p "$SESSION_DIR"
+[ ! -d "$RDB_DIR" ] && mkdir -m $DEFAULT_PERMS -p "$SESSION_DIR" &> /dev/null
 
-scan_ip() { # ( ip )
-  routed=$(ip route | awk '/default via/{ printf "%s/24", $3 }')
-  for i in {0..$MAX_LOOP}; do
-    ip=$(
-      nmap -p "$1" "$routed" --open \
-        --min-parallelism "$MAX_LOOP" | awk '/scan report/{ print $5 }')
-    if [ -n "$ip" ]; then
-      echo "$ip"
-      break
-    fi
+scan_ip() { # ( port )
+  routed=$(ip route 2> /dev/null | awk '/default via/{ printf "%s/24", $3 }')
+  [ -z "$routed" ] && \
+    notify-send "Gagal, tidak terhubung." && exit $EXIT_FAILURE
+  for (( i = 0; i < $MAX_FAIL; ++i )); do
+    IP=$(
+      nmap -p $1 "$routed" --open --min-parallelism 64 2> /dev/null |
+      awk '/scan report/{ print $5 }')
+    count=$(wc -w <<< "$IP")
+    (( $count == 1 )) && return $EXIT_SUCCESS
+    (( $count > 1 )) && \
+      notify-send "Gagal, terlalu banyak." && exit $EXIT_FAILURE
   done
+  notify-send "Gagal, tidak ditemukan."
+  exit $EXIT_FAILURE
 }
 
 get_ip() { # ( port )
   if [ -f "$SESSION" ]; then
-    notify-send "Get session..."
-    ip=$(cat "$SESSION")
-    if [ true &> /dev/null </dev/tcp/"$ip"/"$1" ]; then
-      echo "$ip"
-      return
-    fi
-    notify-send "Session expired..."
+    IP=$(cat "$SESSION")
+    [ ! &> /dev/null < /dev/tcp/"$IP"/$1 ] && return $EXIT_SUCCESS
+    notify-send "Sesi kedaluwarsa..."
   fi
-  notify-send "Scanning..."
-  ip=$(scan_ip "$1")
-  echo "$ip" > "$SESSION"
-  echo "$ip"
+  notify-send "Mendapatkan ulang..."
+  scan_ip $1
+  echo "$IP" > "$SESSION"
 }
 
 if (( $# == 0 )); then
@@ -44,17 +46,27 @@ if (( $# == 0 )); then
 else
   case "$1" in
     --cast)
-      ip=$(get_ip "$ADB_PORT")
-      adb connect "$ip:$ADB_PORT"
-      notify-send "Displaying..."
+      get_ip $ADB_PORT
+      adb connect $IP:$ADB_PORT &> /dev/null
+      (( $? != $EXIT_SUCCESS )) && \
+        notify-send "ADB gagal." && exit $EXIT_FAILURE
       scrcpy --max-size 1280 --max-fps 60 \
-        --serial "$ip:$ADB_PORT" --window-height 720 --window-width 405
+        --serial $IP:$ADB_PORT --window-height 720 \
+        --window-width 405 &> /dev/null
+      (( $? != $EXIT_SUCCESS )) && \
+        notify-send "Scrcpy gagal." && exit $EXIT_FAILURE
+      exit $EXIT_SUCCESS
     ;;
     --ftp)
-      ip=$(get_ip "$FTP_PORT")
-      notify-send "Open..."
-      exo-open --launch FileManager "ftp://$ip:$FTP_PORT"
+      get_ip $FTP_PORT
+      exo-open --launch FileManager "ftp://$IP:$FTP_PORT" &> /dev/null
+      (( $? != $EXIT_SUCCESS )) && \
+        notify-send "Thunar gagal." && exit $EXIT_FAILURE
+      exit $EXIT_SUCCESS
     ;;
-    *) echo "$HELP";;
+    *)
+      echo "$HELP"
+      exit $EXIT_SUCCESS
+    ;;
   esac
 fi
