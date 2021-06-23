@@ -15,7 +15,8 @@ if (( $# == 0 )); then
 else
   [ ! -f "$IMAGE" ] && (cd "$VOLATILE_DIR"; zpaq x "$BASE") && \
     qemu-img resize -f raw "$IMAGE" +4G
-  prime-run qemu-system-x86_64 \
+  sudo -v -S <<< 1618033 &> /dev/null
+  sudo prime-run qemu-system-x86_64 \
     -bios /usr/share/qemu/bios.bin \
     -drive format=raw,file="$IMAGE" \
     -m $1 -machine type=q35,accel=kvm -cpu max \
