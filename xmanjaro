@@ -13,10 +13,9 @@ hostfwd=::8080-:8080`# PhpMyAdmin`
 if (( $# == 0 )); then
   echo "$HELP"
 else
-  [ ! -f "$IMAGE" ] && (cd "$VOLATILE_DIR"; zpaq x "$BASE") && \
+  [ ! -f "$IMAGE" ] && (cd "$VOLATILE_DIR"; zpaq x "$BASE") &&
     qemu-img resize -f raw "$IMAGE" +4G
-  sudo -v -S <<< 1618033 &> /dev/null
-  sudo prime-run qemu-system-x86_64 \
+  prime-run qemu-system-x86_64 \
     -bios /usr/share/qemu/bios.bin \
     -drive format=raw,file="$IMAGE" \
     -m $1 -machine type=q35,accel=kvm -cpu max \
