@@ -2,9 +2,6 @@
 
 HELP="manjaro RAM_IN_MB"
 IMAGE=~/Utils/images/manjaro.img
-HOSTFWD=\
-hostfwd=::10022-:22,`# SSH`\
-hostfwd=::10080-:80`# HTTP`
 
 if (( $# == 0 )); then
   echo "$HELP"
@@ -16,7 +13,7 @@ else
     -smp 8,sockets=1,cores=8,threads=1 \
     -device virtio-vga,virgl=on \
     -display sdl -ctrl-grab \
-    -nic user,model=e1000,$HOSTFWD \
+    -nic user,model=e1000 \
     -device ich9-intel-hda -device hda-duplex \
     -usb -device usb-host,vendorid=0x30c9,productid=0x0013
 fi
