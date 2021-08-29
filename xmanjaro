@@ -13,7 +13,7 @@ hostfwd=::18080-:8080`# PhpMyAdmin`
 if (( $# == 0 )); then
   echo "$HELP"
 else
-  [ ! -f "$IMAGE" ] && cp -R "$BASE" "$IMAGE"
+  [ ! -f "$IMAGE" ] && cp --sparse=always "$BASE" "$IMAGE"
   prime-run qemu-system-x86_64 \
     -bios /usr/share/qemu/bios.bin \
     -drive format=raw,file="$IMAGE" \
