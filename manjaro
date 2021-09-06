@@ -11,7 +11,7 @@ else
     -drive format=raw,file=$IMAGE \
     -m $1 -machine type=q35,accel=kvm -cpu max \
     -smp 8,sockets=1,cores=8,threads=1 \
-    -device virtio-vga,virgl=on \
+    -device virtio-vga \
     -display sdl -ctrl-grab \
     -nic user,model=e1000,smb=/mnt/Volatile \
     -device ich9-intel-hda -device hda-duplex \
