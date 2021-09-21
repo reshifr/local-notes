@@ -95,7 +95,7 @@ Gunakan 'cache -i KEY [VALUE]...' sebagai contoh."
   ;;
   -m)
 [ -z "$2" ] && failure_message "Kunci tidak didefinisikan
-Gunakan 'cache -m KEY [VALUE]...' sebagai contoh."
+Gunakan 'cache -m KEY' sebagai contoh."
     sqlite3 "$CACHE" -separator "" "
       SELECT key || CHAR(10), value
       FROM cache
@@ -103,7 +103,7 @@ Gunakan 'cache -m KEY [VALUE]...' sebagai contoh."
   ;;
   -s)
 [ -z "$2" ] && failure_message "Kunci tidak didefinisikan
-Gunakan 'cache -s KEY [VALUE]...' sebagai contoh."
+Gunakan 'cache -s KEY' sebagai contoh."
     result=$(
       sqlite3 "$CACHE" -separator "" "
         SELECT key || CHAR(10), value || CHAR(10)
@@ -118,7 +118,7 @@ Gunakan 'cache -s KEY [VALUE]...' sebagai contoh."
   ;;
   -d)
 [ -z "$2" ] && failure_message "Kunci tidak didefinisikan
-Gunakan 'cache -d KEY [VALUE]...' sebagai contoh."
+Gunakan 'cache -d KEY' sebagai contoh."
     sqlite3 "$CACHE" "
       DELETE FROM cache
       WHERE key = '$key'" &> /dev/null
