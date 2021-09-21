@@ -97,7 +97,7 @@ Gunakan 'cache -i KEY [VALUE]...' sebagai contoh."
 [ -z "$2" ] && failure_message "Kunci tidak didefinisikan
 Gunakan 'cache -m KEY [VALUE]...' sebagai contoh."
     sqlite3 "$CACHE" -separator "" "
-      SELECT key || CHAR(10), value || CHAR(10)
+      SELECT key || CHAR(10), value
       FROM cache
       WHERE key = '$key'" 2> /dev/null
   ;;
