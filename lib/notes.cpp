@@ -1,53 +1,42 @@
 #include <regex>
 #include <vector>
 #include <fstream>
-#include <cstring>
 #include <iostream>
 #include <filesystem>
 
-struct body {
+class body {
   public:
-    std::string filename;
+    std::string file_name;
     std::string key;
     std::string content;
 };
-
-#define BUF_LEN 0x10000
 
 struct notes {
   private:
     std::string dir_path;
     std::vector<body> bodies;
 
-    bool is_key(const std::string& line) {
-      return line.length()!=0 && line[0]=='[' && line[line.length()-1]==']';
-    }
-
-    bool is_content(const std::string& line) {
-      return line.length()!=0 && !is_key(line);
-    }
-
-    std::string getline(char* buf, std::ifstream& stream) {
-      stream.getline(buf, BUF_LEN);
-      buf[strcspn(buf, "\r\n")] = '\0';
-      return std::string(buf);
-    }
+    bool is_key(const std::string& line)
+      { return line.length()!=0 && line[0]=='[' && line[line.length()-1]==']'; }
+    bool is_content(const std::string& line)
+      { return line.length()!=0 && !is_key(line); }
 
     void index(void) {
       for(const auto& node: std::filesystem::directory_iterator(dir_path)) {
         if( !node.is_regular_file() )
           continue;
-        char buf[BUF_LEN];
-        std::ifstream stream(node.path(), std::ios::in);
+        std::ifstream stream(node.path());
         while( !stream.eof() ) {
-          std::string line = getline(buf, stream);
+          std::string line;
+          std::getline(stream, line);
           if( !is_key(line) )
             continue;
           body cur_body;
-          cur_body.filename = node.path().filename().generic_string();
+          cur_body.file_name = node.path().filename().generic_string();
           cur_body.key = std::string(line);
           for(;;) {
-            line = getline(buf, stream);
+            line.clear();
+            std::getline(stream, line);
             if( !is_content(line) )
               break;
             cur_body.content += line+"\n";
@@ -61,7 +50,7 @@ struct notes {
       std::regex r(keyword, std::regex_constants::icase);
       std::vector<std::size_t> il;
       for(std::size_t i=0; i<bodies.size(); ++i)
-        if( std::regex_search(bodies[i].filename, r) ||
+        if( std::regex_search(bodies[i].file_name, r) ||
             std::regex_search(bodies[i].key, r) ||
             std::regex_search(bodies[i].content, r) )
           il.push_back(i);
@@ -99,7 +88,7 @@ struct notes {
 #define BLUE_BOLD "\033[1;34m"
 #define RESET "\033[0m"
 
-    void search(const std::string keyword) {
+    void search(const std::string& keyword) {
       std::vector<std::size_t> il = index_search(keyword);
       for(const auto& i: il) {
         std::cout<<RED_BOLD<<bodies[i].key<<RESET<<"\n";
