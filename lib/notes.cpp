@@ -9,20 +9,22 @@ class body {
     std::string file_name;
     std::string key;
     std::string content;
+
+    body() : file_name(), key(), content() {}
 };
 
-struct notes {
+class notes {
   private:
-    std::string dir_path;
-    std::vector<body> bodies;
+    std::string m_dir_path;
+    std::vector<body> m_bodies;
 
     bool is_key(const std::string& line)
-      { return line.length()!=0 && line[0]=='[' && line[line.length()-1]==']'; }
+      { return std::regex_match(line, std::regex(R"(^\[.*\]$)")); }
     bool is_content(const std::string& line)
       { return line.length()!=0 && !is_key(line); }
 
-    void index(void) {
-      for(const auto& node: std::filesystem::directory_iterator(dir_path)) {
+    void indexing(void) {
+      for(const auto& node : std::filesystem::directory_iterator(m_dir_path)) {
         if( !node.is_regular_file() )
           continue;
         std::ifstream stream(node.path());
@@ -33,7 +35,7 @@ struct notes {
             continue;
           body cur_body;
           cur_body.file_name = node.path().filename().generic_string();
-          cur_body.key = std::string(line);
+          cur_body.key = line;
           for(;;) {
             line.clear();
             std::getline(stream, line);
@@ -41,27 +43,27 @@ struct notes {
               break;
             cur_body.content += line+"\n";
           }
-          bodies.push_back(cur_body);
+          m_bodies.push_back(cur_body);
         }
       }
     }
 
-    std::vector<std::size_t> index_search(const std::string keyword) {
-      std::regex r(keyword, std::regex_constants::icase);
+    std::vector<std::size_t> find(const std::string& keyword) {
+      std::size_t i = 0;
+      std::regex regex(keyword);
       std::vector<std::size_t> il;
-      for(std::size_t i=0; i<bodies.size(); ++i)
-        if( std::regex_search(bodies[i].file_name, r) ||
-            std::regex_search(bodies[i].key, r) ||
-            std::regex_search(bodies[i].content, r) )
+      for(const auto& body : m_bodies) {
+        if( std::regex_search(body.file_name, regex) ||
+            std::regex_search(body.key, regex) ||
+            std::regex_search(body.content, regex) )
           il.push_back(i);
+        ++i;
+      }
       return il;
     }
 
   public:
-    notes(const std::string dir_path) {
-      notes::dir_path = dir_path;
-      index();
-    }
+    notes(const std::string& dir_path) : m_dir_path(dir_path) { indexing(); }
 
 /**
  * X
@@ -89,28 +91,33 @@ struct notes {
 #define RESET "\033[0m"
 
     void search(const std::string& keyword) {
-      std::vector<std::size_t> il = index_search(keyword);
-      for(const auto& i: il) {
-        std::cout<<RED_BOLD<<bodies[i].key<<RESET<<"\n";
-        std::cout<<YELLOW_BOLD<<bodies[i].content<<RESET<<
+      std::vector<std::size_t> il = find(keyword);
+      for(const auto& i : il) {
+        std::cout<<RED_BOLD<<m_bodies[i].key<<RESET<<"\n";
+        std::cout<<YELLOW_BOLD<<m_bodies[i].content<<RESET<<
           (i==il.back() ? "" : "\n");
       }
     }
 };
 
-#if defined _WIN32 || defined _WIN64
-# define NOTES_PATH "D:\\Lib\\notes"
+#if defined(_WIN32) || defined(_WIN64)
+# define NOTES_PATH R"(D:\Lib\notes)"
 #else
 # define NOTES_PATH "/mnt/Assign/Lib/notes"
 #endif
 #define MESSAGE "notes KEYWORD"
 
 int main(int argc, char** argv) {
-  if( argc==1 || argc>2 ) {
+  if( argc==1 ) {
     std::cout<<MESSAGE<<"\n";
     return EXIT_FAILURE;
   }
   notes index(NOTES_PATH);
-  index.search(argv[1]);
+  std::string keyword;
+  for(std::size_t i=1; i<argc; ++i) {
+    keyword += argv[i];
+    keyword += i==argc-1 ? "" : " ";
+  }
+  index.search(keyword);
   return EXIT_SUCCESS;
 }
