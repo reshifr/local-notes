@@ -16,21 +16,21 @@ int is_prime(uint64_t n) {
 }
 
 uint64_t closest_prime(uint64_t n) {
-  uint64_t l, r, nL, nR;
-  l = r = nL = nR = 0;
+  uint64_t l, r, nl, nr;
+  l = r = nl = nr = 0;
   for(uint64_t i=n; i>0; --i, ++l) {
     if( is_prime(i) ) {
-      nL = i;
+      nl = i;
       break;
     }
   }
-  for(uint64_t i=n;1; ++i, ++r) {
+  for(uint64_t i=n;; ++i, ++r) {
     if( is_prime(i) ) {
-      nR = i;
+      nr = i;
       break;
     }
   }
-  return r<=l ? nR : nL;
+  return r<=l ? nr : nl;
 }
 
 int main(void) {
