@@ -1,47 +1,54 @@
-#!/bin/sh
+#!/bin/bash
 
 EXIT_SUCCESS=0
 EXIT_FAILURE=1
 
 HELP_REGEX='(^\-h$|^\-\-(h$|he$|hel$|help$))'
 
-DB_DIR=~/Utils/etc
+#DB_DIR="$(printf ~)/Utils/etc"
+DB_DIR=.
 CACHE="$DB_DIR/cache.db"
 CACHE_PERMS='+rw'
-CACHE_SCHEMA="\
+CACHE_TABLE_SCHEMA="\
 key|TEXT|0||1
 value|TEXT|0||0"
+CACHE_INDEX_SCHEMA="\
+cache_value_index|0|c|0"
 
 CACHE_HELP="\
-Penggunaan: cache [COMMAND KEY [VALUE]...]
+Penggunaan: cache [COMMAND KEY [VALUE]...] [INFIXES]...
 Simpan informasi kunci-nilai.
 
 Commands:
   -i    menyisipkan data.
-  -m    mencocokkan data.
-  -s    mencari data.
+  -v    memperoleh nilai.
   -d    menghapus data.
 
 Contoh:
   cache --help
-  cache -m \"kode\" \"ds87UskYS760s7adNisa7JUknd8\"
+  cache -i 'kode' 'ds87UskYS760s7adNisa7JUknd8'
 
 Email: <reshifr@gmail.com>
 Github: <https://github.com/reshifr>"
 
 success_message() { # ( msg... )
-  echo "$@"
-  exit $EXIT_SUCCESS
+  for arg in "$@"; do
+    printf "$arg\n"
+  done
+  exit "$EXIT_SUCCESS"
 }
 
 failure_message() { # ( msg... )
-  echo "$@" >&2
-  exit $EXIT_FAILURE
+  for arg in "$@"; do
+    printf "$arg\n" >&2
+  done
+  exit "$EXIT_FAILURE"
 }
 
 cache_failed() {
-failure_message "Kesalahan akses
-Program tidak memiliki akses untuk mengakses database."
+  failure_message \
+    'Kesalahan akses' \
+    'Program tidak memiliki akses untuk mengakses database.'
 }
 
 cache_init() {
@@ -53,87 +60,97 @@ cache_init() {
     chmod "$CACHE_PERMS" "$CACHE" &> /dev/null || cache_failed
   fi
   # buat tabel cache
-  sqlite3 "$CACHE" "
+  sqlite3 "$CACHE" '
     CREATE TABLE IF NOT EXISTS cache(
       key TEXT PRIMARY KEY,
       value TEXT
-    )" &> /dev/null
+    )' &> /dev/null
+  # buat index cache(value)
+  sqlite3 "$CACHE" '
+    CREATE INDEX IF NOT EXISTS cache_value_index
+    ON cache(value)' &> /dev/null
 }
 
 cache_handle() {
   # buat CACHE
-  [ -f "$CACHE" ] || cache_init
+  [ ! -f "$CACHE" ] && cache_init
   # cek integrity CACHE
-  sqlite3 "$CACHE" "PRAGMA INTEGRITY_CHECK" &> /dev/null || cache_init
+  sqlite3 "$CACHE" 'PRAGMA INTEGRITY_CHECK' &> /dev/null || cache_init
   # cek schema dalam CACHE
-  local cache_schema=$(
-    sqlite3 "$CACHE" "
-      SELECT name, type, \"notnull\", dflt_value, pk
-      FROM pragma_table_info('cache')" 2> /dev/null)
-  [ "$cache_schema" == "$CACHE_SCHEMA" ] || cache_init
+  local cache_table_schema=$(
+    sqlite3 "$CACHE" '
+      SELECT name, type, "notnull", dflt_value, pk
+      FROM pragma_table_info("cache")
+      ORDER BY name ASC' 2> /dev/null)
+  local cache_index_schema=$(
+    sqlite3 "$CACHE" '
+      SELECT name, "unique", origin, partial
+      FROM pragma_index_list("cache")
+      WHERE name LIKE "cache%index"
+      ORDER BY name ASC' 2> /dev/null)
+  [ "$cache_table_schema" = "$CACHE_TABLE_SCHEMA" ] &&
+  [ "$cache_index_schema" = "$CACHE_INDEX_SCHEMA" ] || cache_init
 }
 
 cache_handle
 grep -Eo "$HELP_REGEX" <<< "$1" &> /dev/null && success_message "$CACHE_HELP"
-
-search_key=${2//\'/\'\'}
-key=$(printf "\033[1;31m$search_key\033[0m")
-value=${@:3}
-value=${value//\'/\'\'}
+parsed_key=$(sed -e "s/'/''/g" -e 's/%/%%/g; s/\\/\\\\/g' <<< "$2")
+key=$(printf "\033[1;31m$parsed_key\033[0m")
+value=$(sed "s/'/''/g" <<< "${*:3}")
 
 case "$1" in
   -i)
-[ -z "$2" ] && failure_message "Kunci tidak didefinisikan
-Gunakan 'cache -i KEY [VALUE]...' sebagai contoh."
+    [ -z "$2" ] &&
+    failure_message \
+      'Kunci tidak didefinisikan' \
+      "Gunakan 'cache -i KEY [VALUE]...' sebagai contoh."
     sqlite3 "$CACHE" "
       REPLACE INTO cache
       VALUES('$key', '$value')" &> /dev/null
     sqlite3 "$CACHE" -separator "" "
       SELECT key || CHAR(10), value
       FROM cache
-      WHERE key = '$key'" 2> /dev/null
+      WHERE key = '$key'" &> /dev/null
   ;;
-  -m)
-[ -z "$2" ] && failure_message "Kunci tidak didefinisikan
-Gunakan 'cache -m KEY' sebagai contoh."
+  -v)
+    [ -z "$2" ] &&
+    failure_message \
+      'Kunci tidak didefinisikan' \
+      "Gunakan 'cache -v KEY' sebagai contoh."
     sqlite3 "$CACHE" -separator "" "
-      SELECT key || CHAR(10), value
+      SELECT value
       FROM cache
       WHERE key = '$key'" 2> /dev/null
   ;;
-  -s)
-[ -z "$2" ] && failure_message "Kunci tidak didefinisikan
-Gunakan 'cache -s KEY' sebagai contoh."
-    result=$(
-      sqlite3 "$CACHE" -separator "" "
-        SELECT key || CHAR(10), value || CHAR(10)
-        FROM cache
-        WHERE key LIKE '%$search_key%'
-        ORDER BY key ASC" 2> /dev/null)
-    if [ -z "$result" ]; then
-      printf "$result"
-    else
-      echo "$result"
-    fi
-  ;;
   -d)
-[ -z "$2" ] && failure_message "Kunci tidak didefinisikan
-Gunakan 'cache -d KEY' sebagai contoh."
+    [ -z "$2" ] &&
+    failure_message \
+      'Kunci tidak didefinisikan' \
+      "Gunakan 'cache -d KEY' sebagai contoh."
     sqlite3 "$CACHE" "
       DELETE FROM cache
       WHERE key = '$key'" &> /dev/null
   ;;
   *)
-    result=$(
-      sqlite3 "$CACHE" -separator "" "
-        SELECT key || CHAR(10), value || CHAR(10)
-        FROM cache
-        ORDER BY key ASC" 2> /dev/null)
-    if [ -z "$result" ]; then
-      printf "$result"
+    infixes=$(
+      sed -e 's/\\/\\\\/g' -e "s/'/''/g" \
+        -e 's/%/\\%/g; s/_/\\_/g' <<< "${*:1}")
+    if (( "$#" > 0 )); then
+      result=$(
+        sqlite3 "$CACHE" -separator "" "
+          SELECT key || CHAR(10), value || CHAR(10)
+          FROM cache
+          WHERE key LIKE '%$infixes%' ESCAPE '\'
+          OR value LIKE '%$infixes%' ESCAPE '\'
+          ORDER BY key ASC" 2> /dev/null)
+      [ -n "$result" ] && echo "$result"
     else
-      echo "$result"
+      result=$(
+        sqlite3 "$CACHE" -separator "" "
+          SELECT key || CHAR(10), value || CHAR(10)
+          FROM cache
+          ORDER BY key ASC" 2> /dev/null)
+      [ -n "$result" ] && echo "$result"
     fi
+  ;;
 esac
-
-exit $EXIT_SUCCESS
