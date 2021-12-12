@@ -5,7 +5,6 @@ EXIT_FAILURE=1
 
 HELP_REGEX='(^\-h$|^\-\-(h$|he$|hel$|help$))'
 
-#DB_DIR="$(printf ~)/Utils/etc"
 DB_DIR=.
 CACHE="$DB_DIR/cache.db"
 CACHE_PERMS='+rw'
