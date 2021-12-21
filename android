@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-IMAGE_DIR=~/Utils/images
+IMAGE_DIR="$HOME/Utils/images"
 IMAGE="$IMAGE_DIR/android.img"
 
 qemu-system-x86_64 \

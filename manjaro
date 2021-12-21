@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
 HELP="manjaro RAM_IN_MB"
-IMAGE=~/Utils/images/manjaro.img
+IMAGE="$HOME/Utils/images/manjaro.img"
 
 if (( $# == 0 )); then
   echo "$HELP"

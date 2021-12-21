@@ -1,14 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 
-HELP="xmanjaro RAM_IN_MB"
-BASE=~/Utils/images/manjaro.img
-VOLATILE_DIR=/mnt/Volatile
+HELP='xmanjaro RAM_IN_MB'
+BASE="$HOME/Utils/images/manjaro.img"
+VOLATILE_DIR='/mnt/Volatile'
 IMAGE="$VOLATILE_DIR/manjaro.img"
 HOSTFWD=\
 hostfwd=::10022-:2200,`# SSH`\
 hostfwd=::10080-:8000,`# HTTP`\
 hostfwd=::13306-:3306,`# MariaDB`\
-hostfwd=::18080-:8080`# PhpMyAdmin`
+hostfwd=::18080-:8080 `# PhpMyAdmin`
 
 if (( $# == 0 )); then
   echo "$HELP"
