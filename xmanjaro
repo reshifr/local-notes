@@ -2,22 +2,20 @@
 
 HELP='xmanjaro RAM_IN_MB'
 BASE="$HOME/Utils/images/manjaro.img"
-VOLATILE_DIR='/mnt/Volatile'
+VOLATILE_DIR=/mnt/Volatile
 IMAGE="$VOLATILE_DIR/manjaro.img"
 HOSTFWD=\
-hostfwd=::10022-:2200,`# SSH`\
-hostfwd=::10080-:8000,`# HTTP`\
-hostfwd=::13306-:3306,`# MariaDB`\
-hostfwd=::18080-:8080 `# PhpMyAdmin`
+hostfwd=::10022-:22,`# SSH `\
+hostfwd=::10080-:80 `# HTTP `
 
-if (( $# == 0 )); then
+if (( "$#" == 0 )); then
   echo "$HELP"
 else
   [ ! -f "$IMAGE" ] && cp --sparse=always "$BASE" "$IMAGE"
   prime-run qemu-system-x86_64 \
     -bios /usr/share/qemu/bios.bin \
     -drive format=raw,file="$IMAGE" \
-    -m $1 -machine type=q35,accel=kvm -cpu max \
+    -m "$1" -machine type=q35,accel=kvm -cpu max \
     -smp 8,sockets=1,cores=8,threads=1 \
     -device virtio-vga,xres=1440,yres=900 \
     -display sdl -ctrl-grab \
