@@ -53,7 +53,8 @@ else
       notify-send 'ADB gagal.' && exit "$EXIT_FAILURE"
       scrcpy --max-size 1280 --max-fps 60 \
         --serial "$IP:$ADB_PORT" --window-height 720 \
-        --window-width 405 &> /dev/null
+        --window-width 405 --stay-awake \
+        --render-driver=opengl --turn-screen-off &> /dev/null
       (( "$?" != "$EXIT_SUCCESS" )) && \
       notify-send 'Scrcpy gagal.' && exit "$EXIT_FAILURE"
       exit "$EXIT_SUCCESS"
