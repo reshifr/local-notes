@@ -37,7 +37,7 @@ get_ip() { # ( port )
   fi
   notify-send 'Mendapatkan ulang...'
   scan_ip "$1"
-  echo "$IP" > "$SESSION"
+  printf "$IP" > "$SESSION"
 }
 
 [ ! -d "$RDB_DIR" ] && mkdir -m "$DEFAULT_PERMS" -p "$SESSION_DIR"
