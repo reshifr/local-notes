@@ -40,7 +40,7 @@ get_ip() { # ( port )
   echo "$IP" > "$SESSION"
 }
 
-[ ! -d "$RDB_DIR" ] && mkdir -m "$DEFAULT_PERMS" -p "$SESSION_DIR" &> /dev/null
+[ ! -d "$RDB_DIR" ] && mkdir -m "$DEFAULT_PERMS" -p "$SESSION_DIR"
 
 if (( "$#" == 0 )); then
   echo "$HELP"
@@ -48,20 +48,21 @@ else
   case "$1" in
     --cast)
       get_ip "$ADB_PORT"
-      adb connect "$IP:$ADB_PORT" &> /dev/null
+      adb disconnect "$IP:$ADB_PORT"
+      adb connect "$IP:$ADB_PORT"
       (( "$?" != "$EXIT_SUCCESS" )) && \
       notify-send 'ADB gagal.' && exit "$EXIT_FAILURE"
       scrcpy --max-size 1280 --max-fps 60 \
         --serial "$IP:$ADB_PORT" --window-height 720 \
         --window-width 405 --stay-awake \
-        --render-driver=opengl --turn-screen-off &> /dev/null
+        --render-driver=opengl --turn-screen-off
       (( "$?" != "$EXIT_SUCCESS" )) && \
       notify-send 'Scrcpy gagal.' && exit "$EXIT_FAILURE"
       exit "$EXIT_SUCCESS"
     ;;
     --ftp)
       get_ip "$FTP_PORT"
-      exo-open --launch FileManager "ftp://$IP:$FTP_PORT" &> /dev/null
+      exo-open --launch FileManager "ftp://$IP:$FTP_PORT"
       (( "$?" != "$EXIT_SUCCESS" )) && \
       notify-send 'Thunar gagal.' && exit "$EXIT_FAILURE"
       exit "$EXIT_SUCCESS"
