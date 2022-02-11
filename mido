@@ -49,7 +49,7 @@ else
     --cast)
       get_ip "$ADB_PORT"
       adb disconnect "$IP:$ADB_PORT"
-      sleep 0.333
+      sleep 1
       adb connect "$IP:$ADB_PORT"
       (( "$?" != "$EXIT_SUCCESS" )) && \
       notify-send 'ADB gagal.' && exit "$EXIT_FAILURE"
