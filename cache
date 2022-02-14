@@ -112,7 +112,7 @@ case "$1" in
       'Kunci tidak didefinisikan' \
       "Gunakan 'cache -i KEY [VALUE]...' sebagai contoh."
     sqlite3 "$CACHE" "
-      REPLACE INTO cache
+      REPLACE INTO cache(key, value)
       VALUES('$key', '$value')" &> /dev/null
     sqlite3 "$CACHE" -separator '' "
       SELECT key || CHAR(10), value
