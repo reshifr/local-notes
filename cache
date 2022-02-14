@@ -10,8 +10,10 @@ CACHE="$DB_DIR/cache.db"
 CACHE_PERMS=+rw
 CACHE_TABLE_SCHEMA="\
 key|TEXT|0||1
+timestamp|DATETIME|0|CURRENT_TIMESTAMP|0
 value|TEXT|0||0"
 CACHE_INDEX_SCHEMA="\
+cache_timestamp_index|0|c|0
 cache_value_index|0|c|0"
 
 CACHE_HELP="\
@@ -22,6 +24,7 @@ Commands:
   -i    menyisipkan data.
   -v    memperoleh nilai.
   -d    menghapus data.
+  -f    menampilkan informasi penuh.
 
 Contoh:
   cache --help
@@ -62,12 +65,18 @@ cache_init() {
   sqlite3 "$CACHE" '
     CREATE TABLE IF NOT EXISTS cache(
       key TEXT PRIMARY KEY,
-      value TEXT
+      value TEXT,
+      timestamp DATETIME
+      DEFAULT CURRENT_TIMESTAMP
     )' &> /dev/null
   # buat index cache(value)
   sqlite3 "$CACHE" '
     CREATE INDEX IF NOT EXISTS cache_value_index
     ON cache(value)' &> /dev/null
+  # buat index cache(timestamp)
+  sqlite3 "$CACHE" '
+    CREATE INDEX IF NOT EXISTS cache_timestamp_index
+    ON cache(timestamp)' &> /dev/null
 }
 
 cache_handle() {
@@ -129,11 +138,39 @@ case "$1" in
       DELETE FROM cache
       WHERE key = '$key'" &> /dev/null
   ;;
+  -f)
+    if (( "$#" > 1 )); then
+      infixes=$(
+        sed -e 's/\\/\\\\/g' -e "s/'/''/g" \
+          -e 's/%/\\%/g; s/_/\\_/g' <<< "${*:2}")
+      sqlite3 "$CACHE" -separator '' "
+        SELECT
+          PRINTF('%c[1;36m%s%c[0m', CHAR(27),
+            strftime('%H:%M %d-%m-%Y', datetime(timestamp,'localtime')),
+            CHAR(27)) || CHAR(10),
+          PRINTF('%c[1;33m%s%c[0m', CHAR(27), key, CHAR(27)) || CHAR(10),
+          value || CHAR(10)
+        FROM cache
+        WHERE key LIKE '%$infixes%' ESCAPE '\'
+        OR value LIKE '%$infixes%' ESCAPE '\'
+        ORDER BY key ASC" 2> /dev/null | head -c -1
+    else
+      sqlite3 "$CACHE" -separator '' "
+        SELECT
+          PRINTF('%c[1;36m%s%c[0m', CHAR(27),
+            strftime('%H:%M %d-%m-%Y', datetime(timestamp,'localtime')),
+            CHAR(27)) || CHAR(10),
+          PRINTF('%c[1;33m%s%c[0m', CHAR(27), key, CHAR(27)) || CHAR(10),
+          value || CHAR(10)
+        FROM cache
+        ORDER BY key ASC" 2> /dev/null | head -c -1
+    fi
+  ;;
   *)
-    infixes=$(
-      sed -e 's/\\/\\\\/g' -e "s/'/''/g" \
-        -e 's/%/\\%/g; s/_/\\_/g' <<< "${*:1}")
     if (( "$#" > 0 )); then
+      infixes=$(
+        sed -e 's/\\/\\\\/g' -e "s/'/''/g" \
+          -e 's/%/\\%/g; s/_/\\_/g' <<< "${*:1}")
       sqlite3 "$CACHE" -separator '' "
         SELECT
           PRINTF('%c[1;33m%s%c[0m',
