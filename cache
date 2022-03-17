@@ -25,16 +25,19 @@ Penggunaan: cache [COMMAND KEY [VALUE]...] [INFIXES]...
 Simpan informasi kunci-nilai.
 
 Commands:
-  -i   menyisipkan kunci-nilai.
-  -v   menampilkan nilai.
-  -d   menghapus kunci-nilai.
-  -E   menyisipkan kunci-nilai yang terenkripsi.
-  -D   menampilkan kunci-nilai yang terdeskripsi.
-  -F   menampilkan waktu dan kunci-nilai.
+  -i    menyisipkan nilai.
+  -r    menempatkan nilai.
+  -v    menampilkan nilai.
+  -d    menghapus nilai.
+  -f    menampilkan waktu, kunci, dan nilai.
+  -E    menyisipkan nilai yang terenkripsi.
+  -Er   menempatkan nilai yang terenkripsi.
+  -D    menampilkan kunci, dan nilai yang terdeskripsi.
+  -Dv   menampilkan nilai yang terdeskripsi.
 
 Contoh:
   cache --help
-  cache -i 'kode' 'ds87UskYS760s7adNisa7JUknd8'
+  cache -r 'kode' 'ds87UskYS760s7adNisa7JUknd8'
   cache -v 'kunci'
   cache -d 'kunci'
 
@@ -138,6 +141,16 @@ cache_find() { # ( key )
     ORDER BY key ASC" | head -c -1
 }
 
+cache_lookup() { # ( key )
+  local status=$(
+    sqlite3 "$CACHE" -separator '' "
+      SELECT key
+      FROM cache
+      WHERE key = '$key'" 2> /dev/null)
+  [ -n "$status" ] && return "$EXIT_SUCCESS"
+  return "$EXIT_FAILURE"
+}
+
 cache_select() { # ( infixes )
   sqlite3 "$CACHE" -separator '' "
     SELECT
@@ -226,7 +239,23 @@ case "$1" in
     [ -z "$2" ] &&
     failure_message \
       'Kunci tidak didefinisikan' \
-      "Gunakan 'cache -i KEY [VALUE]...' sebagai contoh."
+      "Gunakan 'cache -i KEY' sebagai contoh."
+    cache_lookup "$key" && cache_get "$key" > "$FILE_TMP"
+    nano "$FILE_TMP"
+    [ ! -f "$FILE_TMP" ] && exit "$EXIT_SUCCESS"
+    # ubah <'> ke <''>
+    # ubah <\n> ke <' || CHAR(10) || '>
+    sed -i -e "s/'/''/g" -e ':a;N;$!ba' \
+      -e "s/\n/' || CHAR(10) || '/g" "$FILE_TMP"
+    cache_insert "$key" "$(cat "$FILE_TMP")"
+    cache_find "$key"
+    clean
+  ;;
+  -r)
+    [ -z "$2" ] &&
+    failure_message \
+      'Kunci tidak didefinisikan' \
+      "Gunakan 'cache -r KEY [VALUE]...' sebagai contoh."
     if (( "$#" > 2 )); then
       # ubah <'> ke <''>
       # ubah <\n> ke <' || CHAR(10) || '>
@@ -265,7 +294,30 @@ case "$1" in
     [ -z "$2" ] &&
     failure_message \
       'Kunci tidak didefinisikan' \
-      "Gunakan 'cache -E KEY [VALUE]...' sebagai contoh."
+      "Gunakan 'cache -E KEY' sebagai contoh."
+    if cache_lookup "$key"; then
+      cache_get "$key" > "$FILE_ENCRYPT"
+      decrypt
+    fi
+    if [ ! -f "$FILE_DECRYPT" ]; then
+      clean
+      exit "$EXIT_SUCCESS"
+    fi
+    nano "$FILE_DECRYPT"
+    encrypt
+    if [ -f "$FILE_ENCRYPT" ]; then
+      clear
+      printf '\033[1;34mENCRYPTED\n\033[0m'
+      cache_insert "$key" "$(cat "$FILE_ENCRYPT")"
+      cache_find "$key"
+    fi
+    clean
+  ;;
+  -Er)
+    [ -z "$2" ] &&
+    failure_message \
+      'Kunci tidak didefinisikan' \
+      "Gunakan 'cache -Er KEY' sebagai contoh."
     nano "$FILE_DECRYPT"
     [ ! -f "$FILE_DECRYPT" ] && exit "$EXIT_SUCCESS"
     encrypt
@@ -292,7 +344,17 @@ case "$1" in
     fi
     clean
   ;;
-  -F)
+  -Dv)
+    [ -z "$2" ] &&
+    failure_message \
+      'Kunci tidak didefinisikan' \
+      "Gunakan 'cache -Dv KEY' sebagai contoh."
+    cache_get "$key" > "$FILE_ENCRYPT"
+    decrypt
+    [ -f "$FILE_DECRYPT" ] && cat "$FILE_DECRYPT"
+    clean
+  ;;
+  -f)
     if (( "$#" > 1 )); then
       # ubah <'> ke <''>
       # ubah <\> ke <\\>
