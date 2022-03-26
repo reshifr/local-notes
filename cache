@@ -29,11 +29,15 @@ Commands:
   -r    menempatkan nilai.
   -v    menampilkan nilai.
   -d    menghapus nilai.
+  -e    mengeksekusi nilai.
+  -k    menampilkan kunci.
+  -fk   menampilkan waktu dan kunci.
   -f    menampilkan waktu, kunci, dan nilai.
   -E    menyisipkan nilai yang terenkripsi.
   -Er   menempatkan nilai yang terenkripsi.
   -D    menampilkan kunci, dan nilai yang terdeskripsi.
   -Dv   menampilkan nilai yang terdeskripsi.
+  -De   mengeksekusi nilai yang terdeskripsi.
 
 Contoh:
   cache --help
@@ -151,12 +155,36 @@ cache_lookup() { # ( key )
   return "$EXIT_FAILURE"
 }
 
+cache_key_select() { # ( infixes )
+  sqlite3 "$CACHE" -separator '' "
+    SELECT
+      PRINTF('%c[1;33m%s%c[0m',
+        CHAR(27), key, CHAR(27))
+    FROM cache
+    WHERE key LIKE '%$1%' ESCAPE '\'
+    OR value LIKE '%$1%' ESCAPE '\'
+    ORDER BY key ASC"
+}
+
 cache_select() { # ( infixes )
   sqlite3 "$CACHE" -separator '' "
     SELECT
       PRINTF('%c[1;33m%s%c[0m',
         CHAR(27), key, CHAR(27)) || CHAR(10),
       value || CHAR(10)
+    FROM cache
+    WHERE key LIKE '%$1%' ESCAPE '\'
+    OR value LIKE '%$1%' ESCAPE '\'
+    ORDER BY key ASC" | head -c -1
+}
+
+cache_full_key_select() { # ( infixes )
+  sqlite3 "$CACHE" -separator '' "
+    SELECT
+      PRINTF('%c[1;36m%s%c[0m', CHAR(27),
+        strftime('%H:%M %d-%m-%Y', datetime(timestamp,'localtime')),
+        CHAR(27)) || CHAR(10),
+      PRINTF('%c[1;33m%s%c[0m', CHAR(27), key, CHAR(27)) || CHAR(10)
     FROM cache
     WHERE key LIKE '%$1%' ESCAPE '\'
     OR value LIKE '%$1%' ESCAPE '\'
@@ -177,12 +205,32 @@ cache_full_select() { # ( infixes )
     ORDER BY key ASC" | head -c -1
 }
 
+cache_key_all() {
+  sqlite3 "$CACHE" -separator '' "
+    SELECT
+      PRINTF('%c[1;33m%s%c[0m',
+        CHAR(27), key, CHAR(27))
+    FROM cache
+    ORDER BY key ASC"
+}
+
 cache_all() {
   sqlite3 "$CACHE" -separator '' "
     SELECT
       PRINTF('%c[1;33m%s%c[0m',
         CHAR(27), key, CHAR(27)) || CHAR(10),
       value || CHAR(10)
+    FROM cache
+    ORDER BY key ASC" | head -c -1
+}
+
+cache_full_key_all() {
+  sqlite3 "$CACHE" -separator '' "
+    SELECT
+      PRINTF('%c[1;36m%s%c[0m', CHAR(27),
+        strftime('%H:%M %d-%m-%Y', datetime(timestamp,'localtime')),
+        CHAR(27)) || CHAR(10),
+      PRINTF('%c[1;33m%s%c[0m', CHAR(27), key, CHAR(27)) || CHAR(10)
     FROM cache
     ORDER BY key ASC" | head -c -1
 }
@@ -282,6 +330,13 @@ case "$1" in
       "Gunakan 'cache -v KEY' sebagai contoh."
     cache_get "$key"
   ;;
+  -e)
+    [ -z "$2" ] &&
+    failure_message \
+      'Kunci tidak didefinisikan' \
+      "Gunakan 'cache -e KEY' sebagai contoh."
+    bash -c "$(cache_get "$key")"
+  ;;
   -d)
     [ -z "$2" ] &&
     failure_message \
@@ -298,10 +353,10 @@ case "$1" in
     if cache_lookup "$key"; then
       cache_get "$key" > "$FILE_ENCRYPT"
       decrypt
-    fi
-    if [ ! -f "$FILE_DECRYPT" ]; then
-      clean
-      exit "$EXIT_SUCCESS"
+      if [ ! -f "$FILE_DECRYPT" ]; then
+        clean
+        exit "$EXIT_SUCCESS"
+      fi
     fi
     nano "$FILE_DECRYPT"
     encrypt
@@ -353,6 +408,48 @@ case "$1" in
     decrypt
     [ -f "$FILE_DECRYPT" ] && cat "$FILE_DECRYPT"
     clean
+  ;;
+  -De)
+    [ -z "$2" ] &&
+    failure_message \
+      'Kunci tidak didefinisikan' \
+      "Gunakan 'cache -De KEY' sebagai contoh."
+    cache_get "$key" > "$FILE_ENCRYPT"
+    decrypt
+    [ -f "$FILE_DECRYPT" ] && bash -c "$(cat "$FILE_DECRYPT")"
+    ret=$?
+    clean
+    exit "$ret"
+  ;;
+  -k)
+    if (( "$#" > 1 )); then
+      # ubah <'> ke <''>
+      # ubah <\> ke <\\>
+      # ubah <%> ke <\%>
+      # ubah <_> ke <\_>
+      # ubah [:blank:] ke [:space:]
+      infixes=$(
+        sed -e "s/'/''/g" -e 's/\\/\\\\/g' -e 's/%/\\%/g' \
+          -e 's/_/\\_/g' -e ':a;N;$!ba; s/\s\+/ /g' <<< "${*:2}")
+      cache_key_select "$infixes"
+    else
+      cache_key_all
+    fi
+  ;;
+  -fk)
+    if (( "$#" > 1 )); then
+      # ubah <'> ke <''>
+      # ubah <\> ke <\\>
+      # ubah <%> ke <\%>
+      # ubah <_> ke <\_>
+      # ubah [:blank:] ke [:space:]
+      infixes=$(
+        sed -e "s/'/''/g" -e 's/\\/\\\\/g' -e 's/%/\\%/g' \
+          -e 's/_/\\_/g' -e ':a;N;$!ba; s/\s\+/ /g' <<< "${*:2}")
+      cache_full_key_select "$infixes"
+    else
+      cache_full_key_all
+    fi
   ;;
   -f)
     if (( "$#" > 1 )); then
