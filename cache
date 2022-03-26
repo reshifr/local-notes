@@ -142,7 +142,7 @@ cache_find() { # ( key )
       value || CHAR(10)
     FROM cache
     WHERE key = '$1'
-    ORDER BY key ASC" | head -c -1
+    ORDER BY key DESC" | head -c -1
 }
 
 cache_lookup() { # ( key )
@@ -163,7 +163,7 @@ cache_key_select() { # ( infixes )
     FROM cache
     WHERE key LIKE '%$1%' ESCAPE '\'
     OR value LIKE '%$1%' ESCAPE '\'
-    ORDER BY key ASC"
+    ORDER BY key DESC"
 }
 
 cache_select() { # ( infixes )
@@ -175,7 +175,7 @@ cache_select() { # ( infixes )
     FROM cache
     WHERE key LIKE '%$1%' ESCAPE '\'
     OR value LIKE '%$1%' ESCAPE '\'
-    ORDER BY key ASC" | head -c -1
+    ORDER BY key DESC" | head -c -1
 }
 
 cache_full_key_select() { # ( infixes )
@@ -188,7 +188,7 @@ cache_full_key_select() { # ( infixes )
     FROM cache
     WHERE key LIKE '%$1%' ESCAPE '\'
     OR value LIKE '%$1%' ESCAPE '\'
-    ORDER BY key ASC" | head -c -1
+    ORDER BY key DESC" | head -c -1
 }
 
 cache_full_select() { # ( infixes )
@@ -202,7 +202,7 @@ cache_full_select() { # ( infixes )
     FROM cache
     WHERE key LIKE '%$1%' ESCAPE '\'
     OR value LIKE '%$1%' ESCAPE '\'
-    ORDER BY key ASC" | head -c -1
+    ORDER BY key DESC" | head -c -1
 }
 
 cache_key_all() {
@@ -211,7 +211,7 @@ cache_key_all() {
       PRINTF('%c[1;33m%s%c[0m',
         CHAR(27), key, CHAR(27))
     FROM cache
-    ORDER BY key ASC"
+    ORDER BY key DESC"
 }
 
 cache_all() {
@@ -221,7 +221,7 @@ cache_all() {
         CHAR(27), key, CHAR(27)) || CHAR(10),
       value || CHAR(10)
     FROM cache
-    ORDER BY key ASC" | head -c -1
+    ORDER BY key DESC" | head -c -1
 }
 
 cache_full_key_all() {
@@ -232,7 +232,7 @@ cache_full_key_all() {
         CHAR(27)) || CHAR(10),
       PRINTF('%c[1;33m%s%c[0m', CHAR(27), key, CHAR(27)) || CHAR(10)
     FROM cache
-    ORDER BY key ASC" | head -c -1
+    ORDER BY key DESC" | head -c -1
 }
 
 cache_full_all() {
@@ -244,7 +244,7 @@ cache_full_all() {
       PRINTF('%c[1;33m%s%c[0m', CHAR(27), key, CHAR(27)) || CHAR(10),
       value || CHAR(10)
     FROM cache
-    ORDER BY key ASC" | head -c -1
+    ORDER BY key DESC" | head -c -1
 }
 
 cache_delete() { # ( key )
