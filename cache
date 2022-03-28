@@ -285,7 +285,7 @@ log_handle
 grep -Eo "$HELP_REGEX" <<< "$1" &> /dev/null && success_message "$CACHE_HELP"
 # ubah <'> ke <''>
 # ubah [:blank:] ke [:space:]
-key=$(sed -e "s/'/''/g" -e ':a;N;$!ba; s/\s\+/ /g' <<< "$2")
+key=$(sed "s/'/''/g" <<< "$2" | sed ':a;N;$!ba; s/\s\+/ /g')
 
 case "$1" in
   -i)
@@ -298,8 +298,8 @@ case "$1" in
     [ ! -f "$FILE_TMP" ] && exit "$EXIT_SUCCESS"
     # ubah <'> ke <''>
     # ubah <\n> ke <' || CHAR(10) || '>
-    sed -i -e "s/'/''/g" -e ':a;N;$!ba' \
-      -e "s/\n/' || CHAR(10) || '/g" "$FILE_TMP"
+    sed -i "s/'/''/g" "$FILE_TMP"
+    sed -i -e ':a;N;$!ba' -e "s/\n/' || CHAR(10) || '/g" "$FILE_TMP"
     cache_insert "$key" "$(cat "$FILE_TMP")"
     cache_find "$key"
     clean
@@ -312,8 +312,9 @@ case "$1" in
     if (( "$#" > 2 )); then
       # ubah <'> ke <''>
       # ubah <\n> ke <' || CHAR(10) || '>
-      value=$(sed -e "s/'/''/g" -e ':a;N;$!ba' \
-        -e "s/\n/' || CHAR(10) || '/g" <<< "${*:3}")
+      value=$(
+        sed "s/'/''/g" <<< "${*:3}" |
+        sed -e ':a;N;$!ba' -e "s/\n/' || CHAR(10) || '/g")
       cache_insert "$key" "$value"
       cache_find "$key"
     else
@@ -321,8 +322,8 @@ case "$1" in
       [ ! -f "$FILE_TMP" ] && exit "$EXIT_SUCCESS"
       # ubah <'> ke <''>
       # ubah <\n> ke <' || CHAR(10) || '>
-      sed -i -e "s/'/''/g" -e ':a;N;$!ba' \
-        -e "s/\n/' || CHAR(10) || '/g" "$FILE_TMP"
+      sed -i "s/'/''/g" "$FILE_TMP"
+      sed -i -e ':a;N;$!ba' -e "s/\n/' || CHAR(10) || '/g" "$FILE_TMP"
       cache_insert "$key" "$(cat "$FILE_TMP")"
       cache_find "$key"
       clean
@@ -435,7 +436,7 @@ case "$1" in
       # ubah [:blank:] ke [:space:]
       infixes=$(
         sed -e "s/'/''/g" -e 's/\\/\\\\/g' -e 's/%/\\%/g' \
-          -e 's/_/\\_/g' -e ':a;N;$!ba; s/\s\+/ /g' <<< "${*:2}")
+          -e 's/_/\\_/g' <<< "${*:2}" | sed ':a;N;$!ba; s/\s\+/ /g')
       cache_key_select "$infixes"
     else
       cache_key_all
@@ -450,7 +451,7 @@ case "$1" in
       # ubah [:blank:] ke [:space:]
       infixes=$(
         sed -e "s/'/''/g" -e 's/\\/\\\\/g' -e 's/%/\\%/g' \
-          -e 's/_/\\_/g' -e ':a;N;$!ba; s/\s\+/ /g' <<< "${*:2}")
+          -e 's/_/\\_/g' <<< "${*:2}" | sed ':a;N;$!ba; s/\s\+/ /g')
       cache_full_key_select "$infixes"
     else
       cache_full_key_all
@@ -465,7 +466,7 @@ case "$1" in
       # ubah [:blank:] ke [:space:]
       infixes=$(
         sed -e "s/'/''/g" -e 's/\\/\\\\/g' -e 's/%/\\%/g' \
-          -e 's/_/\\_/g' -e ':a;N;$!ba; s/\s\+/ /g' <<< "${*:2}")
+          -e 's/_/\\_/g' <<< "${*:2}" | sed ':a;N;$!ba; s/\s\+/ /g')
       cache_full_select "$infixes"
     else
       cache_full_all
@@ -480,7 +481,7 @@ case "$1" in
       # ubah [:blank:] ke [:space:]
       infixes=$(
         sed -e "s/'/''/g" -e 's/\\/\\\\/g' -e 's/%/\\%/g' \
-          -e 's/_/\\_/g' -e ':a;N;$!ba; s/\s\+/ /g' <<< "$*")
+          -e 's/_/\\_/g' <<< "${*:2}" | sed ':a;N;$!ba; s/\s\+/ /g')
       cache_select "$infixes"
     else
       cache_all
