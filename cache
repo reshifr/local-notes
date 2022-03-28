@@ -481,7 +481,7 @@ case "$1" in
       # ubah [:blank:] ke [:space:]
       infixes=$(
         sed -e "s/'/''/g" -e 's/\\/\\\\/g' -e 's/%/\\%/g' \
-          -e 's/_/\\_/g' <<< "${*:2}" | sed ':a;N;$!ba; s/\s\+/ /g')
+          -e 's/_/\\_/g' <<< "$*" | sed ':a;N;$!ba; s/\s\+/ /g')
       cache_select "$infixes"
     else
       cache_all
