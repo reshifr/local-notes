@@ -7,10 +7,11 @@ HELP_REGEX='(^\-h$|^\-\-(h$|he$|hel$|help$))'
 DB_DIR=.
 PERMS=+rw
 CACHE="$DB_DIR/cache.db"
+PUBLIC_DIR="/tmp"
 PRIVATE_DIR="$DB_DIR/.log"
-FILE_ID=$(uuidgen)
-FILE_TMP="$PRIVATE_DIR/tmp-$FILE_ID"
-FILE_ENCRYPT="$PRIVATE_DIR/encrypt-$FILE_ID"
+FILE_ID="$(dbus-uuidgen)$(dbus-uuidgen)"
+FILE_TMP="$PUBLIC_DIR/tmp-$FILE_ID"
+FILE_ENCRYPT="$PUBLIC_DIR/encrypt-$FILE_ID"
 FILE_DECRYPT="$PRIVATE_DIR/decrypt-$FILE_ID"
 MAGIC_NUMBER=174487
 CACHE_TABLE_SCHEMA="\
@@ -21,7 +22,7 @@ CACHE_INDEX_SCHEMA="\
 cache_timestamp_index|0|c|0
 cache_value_index|0|c|0"
 CACHE_HELP="\
-Penggunaan: cache [COMMAND KEY [VALUE]...] [INFIXES]...
+Penggunaan: cache [COMMAND KEY] [ARG]...
 Simpan informasi kunci-nilai.
 
 Commands:
@@ -254,6 +255,10 @@ cache_delete() { # ( key )
 }
 
 log_handle() {
+  # buat PUBLIC_DIR
+  if [ ! -d "$PUBLIC_DIR" ]; then
+    mkdir -m "$PERMS" -p "$PUBLIC_DIR" &> /dev/null || log_failed
+  fi
   # buat PRIVATE_DIR
   if [ ! -d "$PRIVATE_DIR" ]; then
     mkdir -m "$PERMS" -p "$PRIVATE_DIR" &> /dev/null || log_failed
@@ -303,7 +308,7 @@ case "$1" in
     [ -z "$2" ] &&
     failure_message \
       'Kunci tidak didefinisikan' \
-      "Gunakan 'cache -r KEY [VALUE]...' sebagai contoh."
+      "Gunakan 'cache -r KEY [ARG]...' sebagai contoh."
     if (( "$#" > 2 )); then
       # ubah <'> ke <''>
       # ubah <\n> ke <' || CHAR(10) || '>
@@ -334,8 +339,8 @@ case "$1" in
     [ -z "$2" ] &&
     failure_message \
       'Kunci tidak didefinisikan' \
-      "Gunakan 'cache -e KEY' sebagai contoh."
-    bash -c "$(cache_get "$key")"
+      "Gunakan 'cache -e KEY [ARG]...' sebagai contoh."
+    bash -c "$(cache_get "$key")" "${@:2}"
   ;;
   -d)
     [ -z "$2" ] &&
@@ -413,10 +418,10 @@ case "$1" in
     [ -z "$2" ] &&
     failure_message \
       'Kunci tidak didefinisikan' \
-      "Gunakan 'cache -De KEY' sebagai contoh."
+      "Gunakan 'cache -De KEY [ARG]...' sebagai contoh."
     cache_get "$key" > "$FILE_ENCRYPT"
     decrypt
-    [ -f "$FILE_DECRYPT" ] && bash -c "$(cat "$FILE_DECRYPT")"
+    [ -f "$FILE_DECRYPT" ] && bash -c "$(cat "$FILE_DECRYPT")" "${@:2}"
     ret=$?
     clean
     exit "$ret"
