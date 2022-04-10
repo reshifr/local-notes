@@ -271,7 +271,7 @@ clean() {
   grep -E '[tmp|encrypt]-[0-9a-f]{64}$' | parallel rm -rf '{}' &> /dev/null
   # bersihkan PRIVATE_DIR
   find "$PRIVATE_DIR" 2> /dev/null |
-  grep -E 'decrypt-[0-9a-f]{64}$' | shred -fuz '{}' &> /dev/null
+  grep -E 'decrypt-[0-9a-f]{64}$' | parallel shred -fuz '{}' &> /dev/null
 }
 
 encrypt() {
