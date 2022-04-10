@@ -266,8 +266,12 @@ log_handle() {
 }
 
 clean() {
-  rm -rf "$FILE_TMP" "$FILE_ENCRYPT" &> /dev/null
-  [ -f "$FILE_DECRYPT" ] && shred -fuz "$FILE_DECRYPT" &> /dev/null
+  # bersihkan PUBLIC_DIR
+  find "$PUBLIC_DIR" 2> /dev/null |
+  grep -E '[tmp|encrypt]-[0-9a-f]{64}$' | parallel rm -rf '{}' &> /dev/null
+  # bersihkan PRIVATE_DIR
+  find "$PRIVATE_DIR" 2> /dev/null |
+  grep -E 'decrypt-[0-9a-f]{64}$' | shred -fuz '{}' &> /dev/null
 }
 
 encrypt() {
