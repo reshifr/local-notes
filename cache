@@ -1,15 +1,23 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 EXIT_SUCCESS=0
 EXIT_FAILURE=1
 HELP_REGEX='(^\-h$|^\-\-(h$|he$|hel$|help$))'
+
+rand() { # ( length... )
+  openssl rand -hex "$1"
+}
+
+blake2b512() { # ( file )
+  openssl blake2b512 "$1" 2> /dev/null | sed "s|BLAKE2B-512($1)= ||"
+}
 
 DB_DIR=.
 PERMS=+rw
 CACHE="$DB_DIR/cache.db"
 PUBLIC_DIR='/tmp'
 PRIVATE_DIR="$DB_DIR/.log"
-FILE_ID="$(dbus-uuidgen)$(dbus-uuidgen)"
+FILE_ID="$(rand 32)"
 FILE_TMP="$PUBLIC_DIR/tmp-$FILE_ID"
 FILE_ENCRYPT="$PUBLIC_DIR/encrypt-$FILE_ID"
 FILE_DECRYPT="$PRIVATE_DIR/decrypt-$FILE_ID"
@@ -297,8 +305,18 @@ case "$1" in
     failure_message \
       'Kunci tidak didefinisikan' \
       "Gunakan 'cache -i KEY' sebagai contoh."
-    cache_lookup "$key" && cache_get "$key" > "$FILE_TMP"
-    nano "$FILE_TMP"
+    if cache_lookup "$key"; then
+      cache_get "$key" > "$FILE_TMP"
+      hvold=$(blake2b512 "$FILE_TMP")
+      nano "$FILE_TMP"
+      hvnew=$(blake2b512 "$FILE_TMP")
+      if [ "$hvold" == "$hvnew" ]; then
+        clean
+        exit "$EXIT_SUCCESS"
+      fi
+    else
+      nano "$FILE_TMP"
+    fi
     [ ! -f "$FILE_TMP" ] && exit "$EXIT_SUCCESS"
     # ubah <'> ke <''>
     # ubah <\n> ke <' || CHAR(10) || '>
@@ -363,12 +381,19 @@ case "$1" in
     if cache_lookup "$key"; then
       cache_get "$key" > "$FILE_ENCRYPT"
       decrypt
-      if [ ! -f "$FILE_DECRYPT" ]; then
+      rm -f "$FILE_ENCRYPT"
+      [ ! -f "$FILE_DECRYPT" ] && exit "$EXIT_SUCCESS"
+      hvold=$(blake2b512 "$FILE_DECRYPT")
+      nano "$FILE_DECRYPT"
+      hvnew=$(blake2b512 "$FILE_DECRYPT")
+      if [ "$hvold" == "$hvnew" ]; then
         clean
         exit "$EXIT_SUCCESS"
       fi
+    else
+      nano "$FILE_DECRYPT"
     fi
-    nano "$FILE_DECRYPT"
+    [ ! -f "$FILE_DECRYPT" ] && exit "$EXIT_SUCCESS"
     encrypt
     if [ -f "$FILE_ENCRYPT" ]; then
       clear
