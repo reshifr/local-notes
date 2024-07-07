@@ -22,13 +22,13 @@ FILE_TMP="$PUBLIC_DIR/tmp-$FILE_ID"
 FILE_ENCRYPT="$PUBLIC_DIR/encrypt-$FILE_ID"
 FILE_DECRYPT="$PRIVATE_DIR/decrypt-$FILE_ID"
 MAGIC_NUMBER=174487
-CACHE_TABLE_SCHEMA="\
-key|TEXT|0||1
-timestamp|DATETIME|0|CURRENT_TIMESTAMP|0
-value|TEXT|0||0"
-CACHE_INDEX_SCHEMA="\
-cache_timestamp_index|0|c|0
-cache_value_index|0|c|0"
+CACHE_TABLE_SCHEMA=$(printf "\
+key|TEXT|0||1\n\
+timestamp|DATETIME|0|CURRENT_TIMESTAMP|0\n\
+value|TEXT|0||0")
+CACHE_INDEX_SCHEMA=$(printf "\
+cache_timestamp_index|0|c|0\n\
+cache_value_index|0|c|0")
 CACHE_HELP="\
 Penggunaan: cache [COMMAND KEY] [ARG]...
 Simpan informasi kunci-nilai.
@@ -56,6 +56,18 @@ Contoh:
 
 Email: <reshifr@gmail.com>
 Github: <https://github.com/reshifr>"
+
+case "$(uname -s)" in
+  MINGW* | CYGWIN*)
+CACHE_TABLE_SCHEMA=$(printf "\
+key|TEXT|0||1\r\n\
+timestamp|DATETIME|0|CURRENT_TIMESTAMP|0\r\n\
+value|TEXT|0||0")
+CACHE_INDEX_SCHEMA=$(printf "\
+cache_timestamp_index|0|c|0\r\n\
+cache_value_index|0|c|0")
+  ;;
+esac
 
 success_message() { # ( msg... )
   for arg in "$@"; do
@@ -276,10 +288,10 @@ log_handle() {
 clean() {
   # bersihkan PUBLIC_DIR
   find "$PUBLIC_DIR" 2> /dev/null |
-  grep -E '[tmp|encrypt]-[0-9a-f]{64}$' | parallel rm -rf '{}' &> /dev/null
+  grep -E '[tmp|encrypt]-[0-9a-f]{64}$' | xargs -I {} rm -rf '{}' &> /dev/null
   # bersihkan PRIVATE_DIR
   find "$PRIVATE_DIR" 2> /dev/null |
-  grep -E 'decrypt-[0-9a-f]{64}$' | parallel shred -fuz '{}' &> /dev/null
+  grep -E 'decrypt-[0-9a-f]{64}$' | xargs -I {} shred -fuz '{}' &> /dev/null
 }
 
 encrypt() {
