@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+SYSTEM=$(uname -s)
+case "$SYSTEM" in
+  Linux*)
+    gcc \
+      -I. -Ofast -march=native \
+      shell.c sqlite3.c -o sqlite3
+  ;;
+  MINGW* | CYGWIN*)
+    vcvars64
+    cl /O2 /arch:AVX512 /I. /Fe:sqlite3.exe shell.c sqlite3.c
+  ;;
+  *)
+    echo 'Cannot compile, unknown system.'
+  ;;
+esac
