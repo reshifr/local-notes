@@ -8,8 +8,7 @@ case "$SYSTEM" in
       shell.c sqlite3.c -o sqlite3
   ;;
   MINGW* | CYGWIN*)
-    vcvars64
-    cl /O2 /arch:AVX512 /I. /Fe:sqlite3.exe shell.c sqlite3.c
+    ./compile.bat
   ;;
   *)
     echo 'Cannot compile, unknown system.'
